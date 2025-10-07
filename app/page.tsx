@@ -1,103 +1,104 @@
-import Image from "next/image";
+// app/page.tsx
+"use client";
+import { useState, useRef } from "react";
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [status, setStatus] = useState<"idle" | "pending" | "done" | "error">("idle");
+  const [message, setMessage] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setFile(f);
+    setMessage("");
+    const url = URL.createObjectURL(f);
+    setPreviewUrl(url);
+  };
+
+  const handleSend = async () => {
+    if (!file) return;
+    try {
+      setStatus("pending");
+      const form = new FormData();
+      form.append("file", file);
+
+      const res = await fetch("/api/ssh", {
+        method: "POST",
+        body: form,
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error("Upload failed");
+
+      setStatus("done");
+      setMessage("Upload successful!");
+    } catch {
+      setStatus("error");
+      setMessage("Upload failed.");
+    }
+  };
+
+  const handleClear = () => {
+    setFile(null);
+    setPreviewUrl(null);
+    setStatus("idle");
+    setMessage("");
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-6 bg-gray-600">
+      <div className="w-full max-w-md p-6 space-y-6 bg-gray-800 rounded-4xl">
+        <h1 className="text-center text-white font-bold text-5xl">Image Uploader</h1>
+
+        <div onClick={() => inputRef.current?.click()} className="p-8 text-center cursor-pointer">
+          {previewUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={previewUrl} alt="Preview" className="mx-auto max-h-48 object-contain" />
+          ) : (
+            <p className="text-white text-2xl border-2 border-dashed border-gray-500 p-20 rounded-4xl hover:bg-gray-900">Click to upload an image</p>
+          )}
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
+          />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {file && (
+          <p className="text-center truncate text-white text-2xl">
+            {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+          </p>
+        )}
+
+        <div className="flex justify-between gap-3">
+          <button onClick={() => inputRef.current?.click()} className="flex-1 py-2 bg-blue-600 text-white rounded-4xl">
+            Upload
+          </button>
+
+          <button onClick={handleSend} 
+          disabled={!file || status === "pending"} 
+          className={"flex-1 py-2 text-white rounded-4xl " + (!file ? "bg-gray-700" : "bg-green-600")}>
+            {status === "pending" ? "Sending..." : "Send"}
+          </button>
+
+          <button onClick={handleClear} disabled={!file}
+          className={"flex-1 py-2 text-white rounded-4xl " + (!file ? "bg-gray-700" : "bg-red-600")}>
+            Clear
+          </button>
+        </div>
+
+        {message && (
+          <p className={"text-center " + (status === "error" ? "text-red-500" : "text-green-500")}>
+            {message}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
