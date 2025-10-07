@@ -1,11 +1,12 @@
+# Use Ubuntu latest as the base image
 FROM ubuntu:latest
 
 # Avoid prompts from apt
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Update packages and install OpenSSH Server
+# Update packages and install OpenSSH Server and vim
 RUN apt-get update && \
-    apt-get install -y openssh-server && \
+    apt-get install -y openssh-server vim && \
     rm -rf /var/lib/apt/lists/*
 
 # Set up user for SFTP with no shell login

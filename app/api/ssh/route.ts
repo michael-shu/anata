@@ -30,7 +30,6 @@ export async function GET() {
 
     console.log("SFTP connected");
 
-    // simple test: list files in home dir
     const list = await sftp.list(".");
     console.log(
       "[/api/ssh] remote directory listing:",
@@ -67,24 +66,27 @@ export async function POST(request: Request) {
   if (!file) return NextResponse.json({ error: "No file" }, { status: 400 });
 
   const buf = Buffer.from(await file.arrayBuffer());
-  const remoteName = `${Date.now()}_${file.name.replace(/[^\w.\-]+/g, "_")}`;
-  const sftp = new SFTPClient();
+
+
+  const timestamp = Date.now();
+  const originalName = file.name;
+  const safeName = originalName.replace(/[^\w.\-]+/g, "_");
+  const remoteName = `${timestamp}_${safeName}`;
 
   console.log("this is remoteName: " + remoteName);
 
+  const sftp = new SFTPClient();
   try {
     await sftp.connect({
-      host: "127.0.0.1", // or "host.docker.internal" if your Next app runs in Docker
-      port: 2222, // mapped host port -> container 22
-      username: "sftpuser", // must match the user with authorized_keys in the container
+      host: "127.0.0.1",
+      port: 2222,
+      username: "sftpuser",
       privateKey: getPrivateKey(),
-      // passphrase: process.env.SSH_PRIVATE_KEY_PASSPHRASE, // if your key has one
       readyTimeout: 10_000,
     });
 
     console.log("Uploading file as upload/" + remoteName);
 
-    // upload the Buffer directly (no temp file needed)
     await sftp.put(buf, `upload/${remoteName}`);
 
     await sftp.end();
